@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColourMemory", "ColourMemory\ColourMemory.csproj", "{81140018-89B3-44DE-B0FE-EEEAA8B033CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColourMemory.Tests", "ColourMemory.Tests\ColourMemory.Tests.csproj", "{6989ECEA-AAC3-4B02-8EEA-787629B43395}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81140018-89B3-44DE-B0FE-EEEAA8B033CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81140018-89B3-44DE-B0FE-EEEAA8B033CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81140018-89B3-44DE-B0FE-EEEAA8B033CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81140018-89B3-44DE-B0FE-EEEAA8B033CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6989ECEA-AAC3-4B02-8EEA-787629B43395}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6989ECEA-AAC3-4B02-8EEA-787629B43395}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6989ECEA-AAC3-4B02-8EEA-787629B43395}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6989ECEA-AAC3-4B02-8EEA-787629B43395}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
