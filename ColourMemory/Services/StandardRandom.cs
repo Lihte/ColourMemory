@@ -1,3 +1,5 @@
+namespace ColourMemory.Services;
+
 public class StandardRandom : IRandomProvider
 {
     private Random _rnd = new Random();

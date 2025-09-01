@@ -1,3 +1,5 @@
+namespace ColourMemory.Services;
+
 public class FixedRandomProvider : IRandomProvider
 {
     private readonly Queue<int> _values;

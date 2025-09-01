@@ -1,5 +1,6 @@
-﻿using ColourMemory;
+﻿using ColourMemory.Core;
 using ColourMemory.Services;
+using ColourMemory.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 internal class Program
