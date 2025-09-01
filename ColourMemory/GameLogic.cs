@@ -2,106 +2,117 @@
 {
     public class GameLogic
     {
-        public string[,] GameBoard { get; private set; } = new string[4, 4];
+        private GameBoard _gameBoard;
+        public GameBoard GameBoard { get => _gameBoard; }
 
-        public bool[,] ViewedCards { get; private set; } = new bool[4, 4];
-        public bool[,] PairedCards { get; private set; } = new bool[4, 4];
+        private IRandomProvider _rnd;
+        private PairEvaluator _pairEvaluator;
 
         public int Score { get; private set; } = 0;
+        public int Difficulty { get; private set; }
 
-        public GameLogic()
+        /// <summary>
+        /// Initializes a new instance of the GameLogic class with the specified random provider and difficulty.
+        /// </summary>
+        public GameLogic(IRandomProvider randomProvider, int difficulty = 3)
         {
-            SetupBoard();
+            _rnd = randomProvider;
+            Difficulty = difficulty;
+            _pairEvaluator = new PairEvaluator();
+            _gameBoard = ResetGameBoard(Difficulty);
         }
 
-        private void SetupBoard()
-        {
-            List<string> colours = new List<string>
-            {
-                "Red", "Red", "Blue", "Blue", "Green", "Green", "Yellow", "Yellow", "Purple", "Purple", "Orange", "Orange", "White", "White", "Cyan", "Cyan"
-            };
-
-            // Inject for true low coupling?
-            Random rnd = new Random();
-
-            for (int i = 0; i < 4; i++)
-            {
-                for (int j = 0; j < 4; j++)
-                {
-                    int index = rnd.Next(colours.Count);
-                    GameBoard[i, j] = colours[index];
-                    colours.RemoveAt(index);
-                }
-            }
-        }
-
+        /// <summary>
+        /// Attempts to flip a card at the specified row and column.
+        /// Returns true if the card was successfully flipped; otherwise, false.
+        /// </summary>
         public bool TryFlipCard(int row, int col)
         {
-            if (row < 0 || row > 3 || col < 0 || col > 3)
+            var card = _gameBoard.GetCard(row, col);
+            if (card.IsPaired || card.IsViewed)
                 return false;
-
-            if (ViewedCards[row, col] || PairedCards[row, col])
-                return false;
-
-            ViewedCards[row, col] = true;
+                
+            card.IsViewed = true;
             return true;
         }
 
+        /// <summary>
+        /// Determines whether the two specified cards form a pair.
+        /// </summary>
         public bool IsPair((int, int) first, (int, int) second)
         {
-            var (x1, y1) = first;
-            var (x2, y2) = second;
+            var card1 = _gameBoard.GetCard(first.Item1, first.Item2);
+            var card2 = _gameBoard.GetCard(second.Item1, second.Item2);
 
-            return GameBoard[x1, y1] == GameBoard[x2, y2];
+            return _pairEvaluator.IsPair(card1, card2);
         }
 
+        /// <summary>
+        /// Handles the result of a pair attempt, updating card states and score accordingly.
+        /// </summary>
         public void HandlePair((int, int) first, (int, int) second, bool isPair)
         {
-            var (x1, y1) = first;
-            var (x2, y2) = second;
+            var card1 = _gameBoard.GetCard(first.Item1, first.Item2);
+            var card2 = _gameBoard.GetCard(second.Item1, second.Item2);
 
             if (isPair)
             {
-                PairedCards[x1, y1] = true;
-                PairedCards[x2, y2] = true;
-                Score++;
+                card1.IsPaired = true;
+                card2.IsPaired = true;
+                Score += _pairEvaluator.Evaluate(card1, card2);
             }
             else
             {
-                ViewedCards[x1, y1] = false;
-                ViewedCards[x2, y2] = false;
-                Score--;
+                card1.IsViewed = false;
+                card2.IsViewed = false;
+                Score += _pairEvaluator.Evaluate(card1, card2);
             }
         }
 
+        /// <summary>
+        /// Checks if all pairs have been found on the game board.
+        /// </summary>
         public bool AllPairsFound()
         {
-            foreach (var pair in PairedCards)
-                if (pair == false) return false;
+            foreach (var card in _gameBoard.GetCards())
+                if (card.IsPaired == false) return false;
+
             return true;
         }
 
-        public void ResetGame()
+        /// <summary>
+        /// Creates and returns a new game board with the specified difficulty.
+        /// </summary>
+        private GameBoard ResetGameBoard(int difficulty)
         {
-            GameBoard = new string[4, 4];
-            
-            ViewedCards = new bool[4, 4];
-            PairedCards = new bool[4, 4];
-            Score = 0;
-
-            SetupBoard();
+            return new GameBoard(_rnd, difficulty);
         }
 
-        // Just for testing to get to the end of the game
-        //public void CheatCode()
-        //{
-        //    for (int i = 0; i < 4; i++)
-        //    {
-        //        for (int j = 0; j < 4; j++)
-        //        {
-        //            PairedCards[i, j] = true;
-        //        }
-        //    }
-        //}
+        /// <summary>
+        /// Resets the game state and initializes a new game board with the specified difficulty.
+        /// </summary>
+        public void ResetGame(int difficulty)
+        {
+            Score = 0;
+            Difficulty = difficulty;
+            _gameBoard = ResetGameBoard(Difficulty);
+        }
+
+        /// <summary>
+        /// Sets all cards as paired and adjusts the score for testing purposes.
+        /// </summary>
+        public void CheatCode()
+        {
+            for (int i = 0; i < GameBoard.Rows; i++)
+            {
+                for (int j = 0; j < GameBoard.Columns; j++)
+                {
+                    GameBoard.GetCard(i, j).IsPaired = true;
+                    Score++;
+                }
+            }
+
+            Score /= 2; // each pair is 2 cards
+        }
     }
 }

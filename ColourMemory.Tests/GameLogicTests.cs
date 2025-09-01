@@ -1,4 +1,7 @@
 using Xunit;
+using ColourMemory;
+using ColourMemory.Models;
+using ColourMemory.Services;
 
 namespace ColourMemory.Tests
 {
@@ -7,18 +10,22 @@ namespace ColourMemory.Tests
         [Fact]
         public void TryFlipCard_ShouldChangeViewedCards()
         {
-            var game = new GameLogic();
+            var rnd = new StandardRandom();
+
+            var game = new GameLogic(rnd);
             bool flipped = game.TryFlipCard(0, 0);
             Assert.True(flipped);
-            Assert.True(game.ViewedCards[0, 0]);
+            Assert.True(game.GameBoard.GetCard(0, 0).IsViewed);
         }
 
         [Fact]
-        public void TryFlipCard_CannotFlipPairedVard()
+        public void TryFlipCard_CannotFlipPairedCard()
         {
-            var game = new GameLogic();
+            var rnd = new StandardRandom();
 
-            game.PairedCards[0, 0] = true;
+            var game = new GameLogic(rnd);
+
+            game.GameBoard.GetCard(0, 0).IsPaired = true;
 
             bool flipped = game.TryFlipCard(0, 0);
 
@@ -28,10 +35,10 @@ namespace ColourMemory.Tests
         [Fact]
         public void Pair_IncresesScore()
         {
-            var game = new GameLogic();
+            var fixedValues = Enumerable.Range(0, 12).Reverse(); // reverse list to get original order after gameboard shuffle, otherwise last card would be first
+            var rnd = new FixedRandomProvider(fixedValues);
 
-            game.GameBoard[0, 0] = "Blue";
-            game.GameBoard[0, 1] = "Blue";
+            var game = new GameLogic(rnd);
 
             game.TryFlipCard(0, 0);
             game.TryFlipCard(0, 1);
@@ -41,17 +48,16 @@ namespace ColourMemory.Tests
 
             Assert.True(isPair);
             Assert.Equal(1, game.Score);
-            Assert.True(game.PairedCards[0, 0]);
-            Assert.True(game.PairedCards[0, 1]);
+            Assert.True(game.GameBoard.GetCard(0, 0).IsPaired);
+            Assert.True(game.GameBoard.GetCard(0, 1).IsPaired);
         }
 
         [Fact]
         public void NotPair_DecresesScoreAndHidesCards()
         {
-            var game = new GameLogic();
-
-            game.GameBoard[0, 0] = "Blue";
-            game.GameBoard[0, 1] = "Red";
+            var fixedValues = Enumerable.Range(0, 12);
+            var rnd = new FixedRandomProvider(fixedValues);
+            var game = new GameLogic(rnd);
 
             game.TryFlipCard(0, 0);
             game.TryFlipCard(0, 1);
@@ -61,19 +67,21 @@ namespace ColourMemory.Tests
 
             Assert.False(isPair);
             Assert.Equal(-1, game.Score);
-            Assert.False(game.ViewedCards[0, 0]);
-            Assert.False(game.ViewedCards[0, 1]);
+            Assert.False(game.GameBoard.GetCard(0, 0).IsViewed);
+            Assert.False(game.GameBoard.GetCard(0, 1).IsViewed);
         }
 
         [Fact]
         public void AllPairsFound_ReturnsTrueWhenAllCardsPaired()
         {
-            var game = new GameLogic();
-            for (int i = 0; i < 4; i++)
+            StandardRandom rnd = new StandardRandom();
+            var game = new GameLogic(rnd, 6);
+
+            for (int i = 0; i < game.GameBoard.Rows; i++)
             {
-                for (int j = 0; j < 4; j++)
+                for (int j = 0; j < game.GameBoard.Columns; j++)
                 {
-                    game.PairedCards[i, j] = true;
+                    game.GameBoard.GetCard(i, j).IsPaired = true;
                 }
             }
 
@@ -83,10 +91,11 @@ namespace ColourMemory.Tests
         [Fact]
         public void AllPairsFound_ReturnsFalseIfAnyPairNotFound()
         {
-            var game = new GameLogic();
+            StandardRandom rnd = new StandardRandom();
+            var game = new GameLogic(rnd);
 
-            game.PairedCards[0, 0] = true;
-            game.PairedCards[1, 1] = false;
+            game.GameBoard.GetCard(0, 0).IsPaired = true;
+            game.GameBoard.GetCard(1, 1).IsPaired = false;
 
             Assert.False(game.AllPairsFound());
         }
@@ -94,9 +103,58 @@ namespace ColourMemory.Tests
         [Fact]
         public void NewGame_ScoreAtZero()
         {
-            var game = new GameLogic();
+            StandardRandom rnd = new StandardRandom();
+            var game = new GameLogic(rnd);
 
             Assert.Equal(0, game.Score);
+        }
+
+        [Fact]
+        public void ResetGame_ShouldResetScoreAndDifficulty()
+        {
+            StandardRandom rnd = new StandardRandom();
+            var game = new GameLogic(rnd, 6);
+            game.CheatCode();
+
+            Assert.Equal(12, game.Score);
+            Assert.Equal(6, game.Difficulty);
+
+            game.ResetGame(3);
+
+            Assert.Equal(0, game.Score);
+            Assert.Equal(3, game.Difficulty);
+        }
+
+        [Fact]
+        public void GameBoard_ShouldInitialize_WithRandomColours()
+        {
+            var knownColoursOrder = new List<string>
+            {
+                "Red", "Red", "Blue", "Blue", "Green", "Green", "Yellow", "Yellow",
+                "Purple", "Purple", "Orange", "Orange"
+            };
+            var rnd = new StandardRandom();
+            var game = new GameLogic(rnd);
+
+            List<string> gameColours = new List<string>();
+            foreach (var card in game.GameBoard.GetCards())
+                gameColours.Add(card.Colour);
+
+            Assert.NotEqual(knownColoursOrder, gameColours);
+        }
+
+        [Fact]
+        public void GameBoard_ShouldInitialize_WithKnownColours()
+        {
+            var fixedValues = Enumerable.Range(0, 12).Reverse(); // reverse list to get original order after gameboard shuffle, otherwise last card would be first
+            var rnd = new FixedRandomProvider(fixedValues);
+            var game = new GameLogic(rnd);
+
+            Card firstCard = game.GameBoard.GetCard(0, 0);
+            Card lastCard = game.GameBoard.GetCard(2, 3);
+
+            Assert.Equal("Red", firstCard.Colour);
+            Assert.Equal("Orange", lastCard.Colour);
         }
     }
 }
